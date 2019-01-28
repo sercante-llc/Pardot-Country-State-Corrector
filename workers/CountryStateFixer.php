@@ -4,7 +4,7 @@
 
 
 //Get the API Key
-$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/3',
+$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/4',
     array(
         'email' => getenv('pardotLogin'),
         'password' => getenv('pardotPassword'),
@@ -21,13 +21,13 @@ $APIKey = $getAPIKey['api_key'];
 
 // Lets look for recent Prospect record changes
 
-$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/3/do/query?',
+$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query?',
     array(
         'email' => getenv('pardotLogin'),
         'password' => getenv('pardotPassword'),
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
-	'user_key' => $APIKey, // requested from the server previously
-	'last_activity_after' => 'today'
+	'api_key' => $APIKey, // requested from the server previously
+	'last_activity_after' => '10 minutes ago'
     ),
     'POST'
 );
