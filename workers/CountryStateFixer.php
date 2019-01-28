@@ -3,8 +3,8 @@
 
 
 
-//this will log in and print your API Key (good for 1 hour) to the console
-$results =  callPardotApi('https://pi.pardot.com/api/login/version/3',
+//Get the API Key
+$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/3',
     array(
         'email' => getenv('pardotLogin'),
         'password' => getenv('pardotPassword'),
@@ -12,19 +12,36 @@ $results =  callPardotApi('https://pi.pardot.com/api/login/version/3',
     ),
     'POST'
 );
+print_r($getAPIKey);
+$APIKey = $getAPIKey['api_key'];
 
+
+
+
+
+// Lets look for recent Prospect record changes
+
+$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/3/do/query?',
+    array(
+        'email' => getenv('pardotLogin'),
+        'password' => getenv('pardotPassword'),
+        'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
+	'user_key' => $APIKey, // requested from the server previously
+	'last_activity_after' => 'today'
+    ),
+    'POST'
+);
 print_r($results);
 
 
 
-
 /**
- * Call the Pardot API and get the raw XML response back
+ * Call the Pardot API and get the --raw-XML-- associative array response back
  *
  * @param string $url the full Pardot API URL to call, e.g. "https://pi.pardot.com/api/prospect/version/3/do/query"
  * @param array $data the data to send to the API - make sure to include your api_key and user_key for authentication
  * @param string $method the HTTP method, one of "GET", "POST", "DELETE"
- * @return string the raw XML response from the Pardot API
+ * @return string the --raw-XML-- associative array response from the Pardot API
  * @throws Exception if we were unable to contact the Pardot API or something went wrong
  */
 function callPardotApi($url, $data, $method = 'GET')
