@@ -4,7 +4,7 @@
 
 
 //this will log in and print your API Key (good for 1 hour) to the console
-echo callPardotApi('https://pi.pardot.com/api/login/version/3',
+$results =  callPardotApi('https://pi.pardot.com/api/login/version/3',
     array(
         'email' => getenv('pardotLogin'),
         'password' => getenv('pardotPassword'),
@@ -13,6 +13,7 @@ echo callPardotApi('https://pi.pardot.com/api/login/version/3',
     'POST'
 );
 
+print_r($results);
 
 
 
@@ -81,7 +82,14 @@ echo $url . "\n\n";
     // make sure to close your handle before you bug out!
     curl_close($curl_handle);
 
-    return $pardotApiResponse;
+
+    // Quick and dirty way of XML -> array
+
+    $xml = simplexml_load_string($pardotApiResponse);
+    $json  = json_encode($xml);
+    $pardotApiResponseData = json_decode($json, true);
+
+    return $pardotApiResponseData;
 }
 
 
