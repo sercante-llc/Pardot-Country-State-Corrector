@@ -1,19 +1,14 @@
 <?php
 
 
-// Pull the login out of the ENV as per the 12 Factor App https://12factor.net/ 
-$pardotLogin  = getenv('PardotLogin');
-$pardotPassword  = getenv('pardotPassword');
-$pardotUserKey  = getenv('pardotUserKey');
-
 
 
 //this will log in and print your API Key (good for 1 hour) to the console
 echo callPardotApi('https://pi.pardot.com/api/login/version/3',
     array(
-        'email' => $pardotLogin,
-        'password' => $pardotPassword,
-        'user_key' => $pardotUserKey //available from https://pi.pardot.com/account
+        'email' => getenv('pardotLogin'),
+        'password' => getenv('pardotPassword'),
+        'user_key' => getenv('pardotUserKey') //available from https://pi.pardot.com/account
     ),
     'POST'
 );
@@ -40,7 +35,7 @@ function callPardotApi($url, $data, $method = 'GET')
     } else {
         $url = $url . '?' . $queryString;
     }
-
+echo $url . "\n\n";
     $curl_handle = curl_init($url);
 
     // wait 5 seconds to connect to the Pardot API, and 30
