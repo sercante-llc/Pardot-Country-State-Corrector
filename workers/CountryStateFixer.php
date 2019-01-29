@@ -35,7 +35,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
 	'api_key' => $APIKey, // requested from the server previously
 	//'last_activity_after' => '120 minutes ago'
-	'last_activity_after' => '1 day ago'
+	'last_activity_after' => '1 days ago'
     ),
     'POST'
 );
