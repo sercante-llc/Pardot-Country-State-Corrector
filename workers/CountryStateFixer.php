@@ -40,7 +40,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
     ),
     'POST'
 );
-//print_r($results);
+print_r($results);
 
 
 
