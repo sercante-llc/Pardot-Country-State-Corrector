@@ -34,12 +34,12 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
         'password' => getenv('pardotPassword'),
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
 	'api_key' => $APIKey, // requested from the server previously
-	//'last_activity_after' => '120 minutes ago'
+	//'last_activity_after' => '360 minutes ago'
 	'last_activity_after' => '1 days ago'
     ),
     'POST'
 );
-//print_r($results);
+print_r($results);
 
 
 
