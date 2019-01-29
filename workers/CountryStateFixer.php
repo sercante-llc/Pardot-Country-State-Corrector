@@ -1,9 +1,14 @@
 <?php
 
+// state correction file
+
+$csv = csv_to_array($filename='correction_options/states_ISOtoEnglish.csv');
+
+print_r($csv);
 
 
 
-//Get the API Key
+//Get the API Key from the server. This is good for 1 hour.
 $getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/4',
     array(
         'email' => getenv('pardotLogin'),
@@ -12,8 +17,10 @@ $getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/4',
     ),
     'POST'
 );
-print_r($getAPIKey);
+//print_r($getAPIKey);
 $APIKey = $getAPIKey['api_key'];
+
+
 
 
 
@@ -27,11 +34,59 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
         'password' => getenv('pardotPassword'),
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
 	'api_key' => $APIKey, // requested from the server previously
-	'last_activity_after' => '10 minutes ago'
+	'last_activity_after' => '120 minutes ago'
     ),
     'POST'
 );
-print_r($results);
+//print_r($results);
+
+
+
+
+
+
+
+
+
+
+
+// Lets process the data
+
+foreach($results['result'] as $key => $value)
+{
+	if($key == 'total_results')
+	{
+		if($value == 0 )
+		{
+			echo "No data to process\n";
+			break; // nothing to do here
+		}
+	}elseif($key == 'prospect')
+	{
+		if(isset($value['state']) && !empty($value['state']) && isset($csv[$value['state']]))
+		{
+			echo "Need to update state {$value['state']} to {$csv[$value['state']]}\n";
+		}
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -53,7 +108,7 @@ function callPardotApi($url, $data, $method = 'GET')
     } else {
         $url = $url . '?' . $queryString;
     }
-echo $url . "\n\n";
+//echo $url . "\n\n";
     $curl_handle = curl_init($url);
 
     // wait 5 seconds to connect to the Pardot API, and 30
@@ -110,5 +165,23 @@ echo $url . "\n\n";
 }
 
 
+
+function csv_to_array($filename='', $delimiter=',')
+{
+    if(!file_exists($filename) || !is_readable($filename))
+        return FALSE;
+
+    $header = NULL;
+    $data = array();
+    if (($handle = fopen($filename, 'r')) !== FALSE)
+    {
+        while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE)
+	{ 
+                $data[trim($row[0])] = trim($row[1]);
+        }
+        fclose($handle);
+    }
+    return $data;
+}
 
 ?>
