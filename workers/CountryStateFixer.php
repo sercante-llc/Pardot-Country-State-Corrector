@@ -34,8 +34,9 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
         'password' => getenv('pardotPassword'),
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
 	'api_key' => $APIKey, // requested from the server previously
-	//'last_activity_after' => '360 minutes ago'
-	'last_activity_after' => '1 days ago'
+	//'last_activity_after' => '360 minutes ago',
+	'last_activity_after' => '1 days ago',
+	'fields' => 'email,country,state' // Optional list for speeding up the process by getting just the data we need.
     ),
     'POST'
 );
