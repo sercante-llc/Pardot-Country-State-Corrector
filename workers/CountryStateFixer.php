@@ -39,7 +39,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
     ),
     'POST'
 );
-print_r($results);
+//print_r($results);
 
 
 
@@ -68,6 +68,16 @@ foreach($results['result'] as $key => $value)
 		{
 			echo "Need to update state {$value['state']} to {$csv[$value['state']]} for {$value['email']}\n";
 		}
+	}elseif($key == 'prospects')
+	{
+		foreach($value AS $record)
+		if(isset($record['state']) && !empty($record['state']) && isset($csv[$record['state']]))
+		{
+			echo "Need to update state {$record['state']} to {$csv[$record['state']]} for {$record['email']}\n";
+		}
+	}else
+	{
+		print_r($results);
 	}
 
 
