@@ -40,7 +40,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
     ),
     'POST'
 );
-//print_r($results);
+print_r($results);
 
 
 
@@ -70,6 +70,7 @@ foreach($results['result'] as $key => $value)
 			echo "Need to update state {$value['state']} to {$csv[$value['state']]} for {$value['email']}\n";
 		}elseif($value[0]['id']) // we are looking at an array of data, lets loop over it.
 		{
+			print_r($value);
 			foreach ($value AS $prospect)
 			{
 				if(isset($prospect['state']) && !empty($prospect['state']) && isset($csv[$prospect['state']]))
@@ -178,6 +179,12 @@ function callPardotApi($url, $data, $method = 'GET')
     $xml = simplexml_load_string($pardotApiResponse);
     $json  = json_encode($xml);
     $pardotApiResponseData = json_decode($json, true);
+
+    if($pardotApiResponseData['stat'] = 'fail')
+    {
+	    echo $url . "\n\n" . $pardotApiResponse;
+	    exit();
+    }
 
     return $pardotApiResponseData;
 }
