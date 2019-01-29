@@ -4,7 +4,7 @@
 
 $csv = csv_to_array($filename='correction_options/states_ISOtoEnglish.csv');
 
-print_r($csv);
+//print_r($csv);
 
 
 
@@ -34,7 +34,8 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
         'password' => getenv('pardotPassword'),
         'user_key' => getenv('pardotUserKey'), //available from https://pi.pardot.com/account
 	'api_key' => $APIKey, // requested from the server previously
-	'last_activity_after' => '120 minutes ago'
+	//'last_activity_after' => '120 minutes ago'
+	'last_activity_after' => '1 day ago'
     ),
     'POST'
 );
@@ -65,7 +66,7 @@ foreach($results['result'] as $key => $value)
 	{
 		if(isset($value['state']) && !empty($value['state']) && isset($csv[$value['state']]))
 		{
-			echo "Need to update state {$value['state']} to {$csv[$value['state']]}\n";
+			echo "Need to update state {$value['state']} to {$csv[$value['state']]} for {$value['email']}\n";
 		}
 	}
 
