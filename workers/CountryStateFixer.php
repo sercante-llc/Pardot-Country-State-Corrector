@@ -126,14 +126,14 @@ function search_for_errors($prospect)
 
 	// State error
 	//
-	if(isset($prospect['country']) && !empty($prospect['country']) && isset($StateCorrections[strtolower($prospect['country'])]))
+	if(isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
 	{
 		if(getenv('runmode') == 'demo')
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
 			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
-			$corrections['country'] = $StateCorrections[strtolower($prospect['country'])];	
+			$corrections['country'] = $CountryCorrections[strtolower($prospect['country'])];	
 		}	
 	}
 
