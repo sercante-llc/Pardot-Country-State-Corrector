@@ -115,7 +115,7 @@ function search_for_errors($prospect)
 	//
 	if(isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
 	{
-		if(!empty($prospect['crm_owner_fid'])
+		if(!empty($prospect['crm_owner_fid']))
 		{
 			echo "Skiping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(getenv('runmode') == 'demo')
@@ -131,7 +131,7 @@ function search_for_errors($prospect)
 	//
 	if(isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
 	{
-		if(!empty($prospect['crm_owner_fid'])
+		if(!empty($prospect['crm_owner_fid']))
 		{
 			echo "Skiping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(getenv('runmode') == 'demo')
