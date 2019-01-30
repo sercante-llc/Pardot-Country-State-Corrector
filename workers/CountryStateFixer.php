@@ -119,7 +119,7 @@ function search_for_errors($prospect)
 		{
 			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
-			echo "Updating state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
+			echo "Updating state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['id']}\n";
 			$corrections['state'] = $StateCorrections[strtolower($prospect['state'])];
 		}
 	}
@@ -132,7 +132,7 @@ function search_for_errors($prospect)
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
-			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";			
+			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
 			$corrections['country'] = $StateCorrections[strtolower($prospect['country'])];	
 		}	
 	}
@@ -194,7 +194,7 @@ function callPardotApi($url, $data, $method = 'GET')
 	} else {
 		$url = $url . '?' . $queryString;
 	}
-	//echo $url . "\n\n";
+	echo $url . "\n\n";
 	$curl_handle = curl_init($url);
 
 	// wait 5 seconds to connect to the Pardot API, and 30
