@@ -30,8 +30,6 @@ $APIKey = $getAPIKey['api_key'];
 
 $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query?',
 	array(
-		'email' => trim(getenv('pardotLogin')),
-		'password' => trim(getenv('pardotPassword')),
 		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 		'api_key' => $APIKey, // requested from the server previously
 		'last_activity_after' => '21 minutes ago',
@@ -46,12 +44,10 @@ loop_the_results($results);
 // Lets look for new Prospect record changes
 $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query?',
 	array(
-		'email' => trim(getenv('pardotLogin')),
-		'password' => trim(getenv('pardotPassword')),
 		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 		'api_key' => $APIKey, // requested from the server previously
-		'created_after' => '21 minutes ago',
-		//'created_after' => '1 days ago',
+		'updated_after' => '21 minutes ago',
+		//'updated_after' => '1 days ago',
 		'fields' => 'email,country,state' // Optional list for speeding up the process by getting just the data we need.
 	),
 	'POST'
@@ -65,11 +61,11 @@ loop_the_results($results);
 
 function loop_the_results($results)
 {
-
 	// Lets process the data
 
 	foreach($results['result'] as $key => $value)
 	{
+		
 		if($key == 'total_results')
 		{
 			if($value == 0 )
@@ -110,23 +106,47 @@ function loop_the_results($results)
 
 function search_for_errors($prospect)
 {
-	global $StateCorrections, $CountryCorrections; // Lets pull in some data sets
 	//print_r($prospect);
+	global $StateCorrections, $CountryCorrections, $APIKey; // Lets pull in some data sets
+
+	$corrections = array();
 
 	// Country error
 	//
-	if(isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[$prospect['state']]))
+	if(isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
 	{
-		echo "Need to update state {$prospect['state']} to {$StateCorrections[$prospect['state']]} for {$prospect['email']}\n";
+		if(getenv('runmode') == 'demo')
+		{
+			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
+		}else{
+			$corrections['state'] = $StateCorrections[strtolower($prospect['state'])];
+		}
 	}
 
 	// State error
 	//
-	if(isset($prospect['country']) && !empty($prospect['country']) && isset($StateCorrections[$prospect['country']]))
+	if(isset($prospect['country']) && !empty($prospect['country']) && isset($StateCorrections[strtolower($prospect['country'])]))
 	{
-		echo "Need to update country {$prospect['country']} to {$CountryCorrections[$prospect['country']]} for {$prospect['email']}\n";
+		if(getenv('runmode') == 'demo')
+		{
+			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
+		}else{
+			$corrections['country'] = $StateCorrections[strtolower($prospect['country'])];	
+		}	
 	}
 
+	// lets process the corrections if we have them.
+	if(!empty($corrections))
+	{
+
+		$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/4/do/update/id/{$prospect['id']}?",
+			array_merge(array(
+				'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+				'api_key' => $APIKey, // requested from the server previously
+			),$corrections ),
+			'POST'
+		);
+	}
 }
 
 
@@ -237,7 +257,7 @@ function csv_to_array($filename='', $delimiter=',')
 	{
 		while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE)
 		{ 
-			$data[trim($row[0])] = trim($row[1]);
+			$data[strtolower(trim($row[0]))] = trim($row[1]);
 		}
 		fclose($handle);
 	}
