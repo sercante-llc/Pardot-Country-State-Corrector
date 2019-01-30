@@ -34,7 +34,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(get
 		'api_key' => $APIKey, // requested from the server previously
 		'last_activity_after' => '21 minutes ago',
 		//'last_activity_after' => '1 days ago',
-		'fields' => 'email,country,state' // Optional list for speeding up the process by getting just the data we need.
+		'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
 	),
 	'POST'
 );
@@ -48,7 +48,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(get
 		'api_key' => $APIKey, // requested from the server previously
 		'updated_after' => '21 minutes ago',
 		//'updated_after' => '1 days ago',
-		'fields' => 'email,country,state' // Optional list for speeding up the process by getting just the data we need.
+		'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
 	),
 	'POST'
 );
@@ -115,7 +115,10 @@ function search_for_errors($prospect)
 	//
 	if(isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
 	{
-		if(getenv('runmode') == 'demo')
+		if(!empty($prospect['crm_owner_fid'])
+		{
+			echo "Skiping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
+		}elseif(getenv('runmode') == 'demo')
 		{
 			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
@@ -128,7 +131,10 @@ function search_for_errors($prospect)
 	//
 	if(isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
 	{
-		if(getenv('runmode') == 'demo')
+		if(!empty($prospect['crm_owner_fid'])
+		{
+			echo "Skiping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+		}elseif(getenv('runmode') == 'demo')
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
