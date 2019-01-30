@@ -140,16 +140,22 @@ function search_for_errors($prospect)
 	{
 		if(trim(getenv('apiversion')) == 4 )
 		{
-		$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/".trim(getenv('apiversion'))."/do/update/id/{$prospect['id']}?",
-			array_merge(array(
-				'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
-				'api_key' => $APIKey, // requested from the server previously
-			),$corrections ),
-			'POST'
-		);
+			$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/".trim(getenv('apiversion'))."/do/update/id/{$prospect['id']}?",
+				array_merge(array(
+					'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+					'api_key' => $APIKey, // requested from the server previously
+				),$corrections ),
+				'POST'
+			);
 		}elseif(trim(getenv('apiversion')) == 3)
 		{
-			//TODO API3 version of update
+			$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/".trim(getenv('apiversion'))."/do/update/email/{$prospect['email']}?",
+				array_merge(array(
+					'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+					'api_key' => $APIKey, // requested from the server previously
+				),$corrections ),
+				'POST'
+			);
 		}
 	}
 }
