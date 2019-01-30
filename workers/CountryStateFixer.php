@@ -119,6 +119,7 @@ function search_for_errors($prospect)
 		{
 			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
+			echo "Updating state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 			$corrections['state'] = $StateCorrections[strtolower($prospect['state'])];
 		}
 	}
@@ -131,6 +132,7 @@ function search_for_errors($prospect)
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
+			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";			
 			$corrections['country'] = $StateCorrections[strtolower($prospect['country'])];	
 		}	
 	}
