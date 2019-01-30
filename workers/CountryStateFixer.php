@@ -186,7 +186,7 @@ function callPardotApi($url, $data, $method = 'GET')
 	} else {
 		$url = $url . '?' . $queryString;
 	}
-	echo $url . "\n\n";
+	//echo $url . "\n\n";
 	$curl_handle = curl_init($url);
 
 	// wait 5 seconds to connect to the Pardot API, and 30
