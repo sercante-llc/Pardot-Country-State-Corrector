@@ -9,7 +9,7 @@ $CountryCorrections = csv_to_array($filename='correction_options/countries_ISOto
 
 
 //Get the API Key from the server. This is good for 1 hour.
-$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/4',
+$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/' . trim(getenv('apiversion')),
 	array(
 		'email' => trim(getenv('pardotLogin')),
 		'password' => trim(getenv('pardotPassword')),
@@ -28,7 +28,7 @@ $APIKey = $getAPIKey['api_key'];
 
 // Lets look for recent Prospect record changes
 
-$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query?',
+$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
 	array(
 		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 		'api_key' => $APIKey, // requested from the server previously
@@ -42,7 +42,7 @@ $results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query
 loop_the_results($results);
 
 // Lets look for new Prospect record changes
-$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/4/do/query?',
+$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
 	array(
 		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 		'api_key' => $APIKey, // requested from the server previously
@@ -138,14 +138,19 @@ function search_for_errors($prospect)
 	// lets process the corrections if we have them.
 	if(!empty($corrections))
 	{
-
-		$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/4/do/update/id/{$prospect['id']}?",
+		if(trim(getenv('apiversion')) == 4 )
+		{
+		$results =  callPardotApi("https://pi.pardot.com/api/prospect/version/".trim(getenv('apiversion'))."/do/update/id/{$prospect['id']}?",
 			array_merge(array(
 				'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 				'api_key' => $APIKey, // requested from the server previously
 			),$corrections ),
 			'POST'
 		);
+		}elseif(trim(getenv('apiversion')) == 3)
+		{
+			//TODO API3 version of update
+		}
 	}
 }
 
