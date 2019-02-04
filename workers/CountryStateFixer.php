@@ -2,9 +2,28 @@
 
 // Load correction files
 // TODO make this load out of an ENV variable to provide the specific file and to opt into that specific function
-$StateCorrections = csv_to_array($filename='correction_options/states_ISOtoEnglish.csv');
-$CountryCorrections = csv_to_array($filename='correction_options/countries_ISOtoEnglish.csv');
+$statecorrectionfilename = trim(getenv('statecorrections'));
+if(!empty($statecorrectionfilename) && file_exists('correction_options/' . $statecorrectionfilename))
+{
+	echo "Loading State correction file: $statecorrectionfilename\n";
+	$StateCorrections = csv_to_array($filename='correction_options/states_ISOtoEnglish.csv');
+	//print_r($StateCorrections);
+}else
+{
+	echo "No state file\n";
+	$StateCorrections = NULL;
+}
 
+$countrycorrectionsfilename = trim(getenv('countrycorrections'));
+if(!empty($countrycorrectionsfilename) && file_exists('correction_options/' . $countrycorrectionsfilename))
+{
+	echo "Loading Country correction file: $countrycorrectionsfilename\n";
+	$CountryCorrections = csv_to_array($filename="correction_options/{$countrycorrectionsfilename}");
+}else
+{
+	echo "No Country file\n";	
+	$CountryCorrections = NULL;
+}
 
 
 
@@ -111,36 +130,40 @@ function search_for_errors($prospect)
 
 	$corrections = array();
 
-	// Country error
+	// State error
 	//
-	if(isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
+	if(!empty($StateCorrections) && isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
 	{
-		if(!empty($prospect['crm_owner_fid']))
+		if(!empty($prospect['crm_owner_fid']) || trim(getenv('forcestatecorrections')) != 'true') // This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
 			echo "Skiping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
-		}elseif(getenv('runmode') == 'demo')
+		}elseif(trim(getenv('runmode')) == 'demo')
 		{
 			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
 			echo "Updating state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['id']}\n";
 			$corrections['state'] = $StateCorrections[strtolower($prospect['state'])];
 		}
+	}else{
+		//echo "Skipping State checking\n";
 	}
 
-	// State error
+	// Country error
 	//
-	if(isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
+	if(!empty($CountryCorrections) && isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
 	{
-		if(!empty($prospect['crm_owner_fid']))
+		if(!empty($prospect['crm_owner_fid']) || trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
 			echo "Skiping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
-		}elseif(getenv('runmode') == 'demo')
+		}elseif(trim(getenv('runmode')) == 'demo')
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
 			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
 			$corrections['country'] = $CountryCorrections[strtolower($prospect['country'])];	
 		}	
+	}else{
+		//echo "Skipping Country checking\n";
 	}
 
 	// lets process the corrections if we have them.
