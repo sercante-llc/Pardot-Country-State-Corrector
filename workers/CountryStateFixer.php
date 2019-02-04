@@ -184,13 +184,13 @@ function search_for_errors($prospect)
 	{
 		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skipping update missing country {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update missing country {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
-			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['email']}\n";
+			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
-			echo "Updating country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
-			$corrections['country'] = $CountryAssumptions[strtolower($prospect['country'])];	
+			echo "Updating country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['id']}\n";			
+			$corrections['country'] = $CountryAssumptions[strtolower($prospect['state'])];	
 		}	
 	}else{
 		//echo "Skipping Country checking\n";
