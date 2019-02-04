@@ -1,12 +1,11 @@
 <?php
 
 // Load correction files
-// TODO make this load out of an ENV variable to provide the specific file and to opt into that specific function
 $statecorrectionfilename = trim(getenv('statecorrections'));
-if(!empty($statecorrectionfilename) && file_exists('correction_options/' . $statecorrectionfilename))
+if(!empty($statecorrectionfilename) && file_exists(dirname(__FILE__). '/correction_options/' . $statecorrectionfilename))
 {
 	echo "Loading State correction file: $statecorrectionfilename\n";
-	$StateCorrections = csv_to_array($filename='correction_options/states_ISOtoEnglish.csv');
+	$StateCorrections = csv_to_array($filename=dirname(__FILE__). "/correction_options/{$statecorrectionfilename}");
 	//print_r($StateCorrections);
 }else
 {
@@ -15,14 +14,25 @@ if(!empty($statecorrectionfilename) && file_exists('correction_options/' . $stat
 }
 
 $countrycorrectionsfilename = trim(getenv('countrycorrections'));
-if(!empty($countrycorrectionsfilename) && file_exists('correction_options/' . $countrycorrectionsfilename))
+if(!empty($countrycorrectionsfilename) && file_exists(dirname(__FILE__). '/correction_options/' . $countrycorrectionsfilename))
 {
 	echo "Loading Country correction file: $countrycorrectionsfilename\n";
-	$CountryCorrections = csv_to_array($filename="correction_options/{$countrycorrectionsfilename}");
+	$CountryCorrections = csv_to_array($filename=dirname(__FILE__). "/correction_options/{$countrycorrectionsfilename}");
 }else
 {
 	echo "No Country file\n";	
 	$CountryCorrections = NULL;
+}
+
+$countryassumptioncorrectionsfilename = trim(getenv('countryasumptions'));
+if(!empty($countryassumptioncorrectionsfilename) && file_exists(dirname(__FILE__). '/correction_options/' . $countryassumptioncorrectionsfilename))
+{
+	echo "Loading Country asumption file: $countryassumptioncorrectionsfilename\n";
+	$CountryAsumptions = csv_to_array($filename=dirname(__FILE__). "/correction_options/{$countryassumptioncorrectionsfilename}");
+}else
+{
+	echo "No State->Country file\n";	
+	$CountryAsumptions = NULL;
 }
 
 
@@ -165,6 +175,28 @@ function search_for_errors($prospect)
 	}else{
 		//echo "Skipping Country checking\n";
 	}
+
+
+
+	// Missing Country but existing state error
+	//
+	if(!empty($CountryAsumptions) && isset($prospect['state']) && !empty($prospect['state'])  && empty($prospect['country']) && isset($CountryAsumptions[strtolower($prospect['state'])]))
+	{
+		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
+		{
+			echo "Skipping update missing country {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+		}elseif(trim(getenv('runmode')) == 'demo')
+		{
+			echo "Need to add country for {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['email']}\n";
+		}else{
+			echo "Updating country for {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
+			$corrections['country'] = $CountryAsumptions[strtolower($prospect['country'])];	
+		}	
+	}else{
+		//echo "Skipping Country checking\n";
+	}
+
+
 
 	// lets process the corrections if we have them.
 	if(!empty($corrections))
