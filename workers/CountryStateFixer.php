@@ -134,9 +134,9 @@ function search_for_errors($prospect)
 	//
 	if(!empty($StateCorrections) && isset($prospect['state']) && !empty($prospect['state']) && isset($StateCorrections[strtolower($prospect['state'])]))
 	{
-		if(!empty($prospect['crm_owner_fid']) || trim(getenv('forcestatecorrections')) != 'true') // This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
+		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcestatecorrections')) != 'true') // This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skiping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
 			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
@@ -152,9 +152,9 @@ function search_for_errors($prospect)
 	//
 	if(!empty($CountryCorrections) && isset($prospect['country']) && !empty($prospect['country']) && isset($CountryCorrections[strtolower($prospect['country'])]))
 	{
-		if(!empty($prospect['crm_owner_fid']) || trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
+		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skiping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
 			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
