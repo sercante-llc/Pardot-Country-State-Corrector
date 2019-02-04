@@ -24,15 +24,15 @@ if(!empty($countrycorrectionsfilename) && file_exists(dirname(__FILE__). '/corre
 	$CountryCorrections = NULL;
 }
 
-$countryassumptioncorrectionsfilename = trim(getenv('countryasumptions'));
+$countryassumptioncorrectionsfilename = trim(getenv('countryassumptions'));
 if(!empty($countryassumptioncorrectionsfilename) && file_exists(dirname(__FILE__). '/correction_options/' . $countryassumptioncorrectionsfilename))
 {
-	echo "Loading Country asumption file: $countryassumptioncorrectionsfilename\n";
-	$CountryAsumptions = csv_to_array($filename=dirname(__FILE__). "/correction_options/{$countryassumptioncorrectionsfilename}");
+	echo "Loading Country assumption file: $countryassumptioncorrectionsfilename\n";
+	$CountryAssumptions = csv_to_array($filename=dirname(__FILE__). "/correction_options/{$countryassumptioncorrectionsfilename}");
 }else
 {
 	echo "No State->Country file\n";	
-	$CountryAsumptions = NULL;
+	$CountryAssumptions = NULL;
 }
 
 
@@ -136,7 +136,7 @@ function loop_the_results($results)
 function search_for_errors($prospect)
 {
 	//print_r($prospect);
-	global $StateCorrections, $CountryCorrections, $APIKey; // Lets pull in some data sets
+	global $StateCorrections, $CountryCorrections, $CountryAssumptions, $APIKey; // Lets pull in some data sets
 
 	$corrections = array();
 
@@ -180,17 +180,17 @@ function search_for_errors($prospect)
 
 	// Missing Country but existing state error
 	//
-	if(!empty($CountryAsumptions) && isset($prospect['state']) && !empty($prospect['state'])  && empty($prospect['country']) && isset($CountryAsumptions[strtolower($prospect['state'])]))
+	if(!empty($CountryAssumptions) && isset($prospect['state']) && !empty($prospect['state'])  && empty($prospect['country']) && isset($CountryAssumptions[strtolower($prospect['state'])]))
 	{
 		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skipping update missing country {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update missing country {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
-			echo "Need to add country for {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['email']}\n";
+			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['email']}\n";
 		}else{
-			echo "Updating country for {$prospect['state']} to {$CountryAsumptions[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
-			$corrections['country'] = $CountryAsumptions[strtolower($prospect['country'])];	
+			echo "Updating country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
+			$corrections['country'] = $CountryAssumptions[strtolower($prospect['country'])];	
 		}	
 	}else{
 		//echo "Skipping Country checking\n";
