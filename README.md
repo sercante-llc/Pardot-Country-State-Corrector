@@ -21,6 +21,11 @@ The following three items are required for Authentication
  * pardotPassword
  * pardotUserKey
 
+### What to process
+We can process either a specific list, or prospects that have had activity or data changes in a given period of time. The tool assumes it's being ran every 10 minutes and will look back 21 minutes to have two chances and applying corrections.
+Set one of the folling ENV variables to change this behaviour
+ * pardotListID
+
 ### Country Correction
 Country correction is enabled by declaring the source file for the corrections. This is a .csv file in bad value, good value pairs which is intrepreted in a case insensitive way.
  * countrycorrections=countries_ISOtoEnglish.csv
