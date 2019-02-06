@@ -1,7 +1,24 @@
 <?php
+/**
+  * Sercante Country State Fixer.
+  *
+  * This is a tool intended to solve a common Pardot problem. GeoIP values are not aligned with SFDC picklist values
+  *
+  * This is designed to be ran in Heroku under the Heroku Scheduler. It should run on most any PHP environment.
+  *
+  * 
+  *
+  * @author  Mike Creuzer <creuzer@sercante.com>
+  *
+  */
+
 
 // Load correction files
-$statecorrectionfilename = trim(getenv('statecorrections'));
+// File names are defined as ENV variables
+// files are pre-created and stored in the correction_options folder.
+// These files are in .csv format in a bad,good data order, one match per line.
+// It is acceptable to NOT provide a file, in which case the specific correction will be skipped.
+$statecorrectionfilename = trim(getenv('statecorrections'));  // we do a trim as local command line may put a carriage return at the end
 if(!empty($statecorrectionfilename) && file_exists(dirname(__FILE__). '/correction_options/' . $statecorrectionfilename))
 {
 	echo "Loading State correction file: $statecorrectionfilename\n";
@@ -37,7 +54,7 @@ if(!empty($countryassumptioncorrectionsfilename) && file_exists(dirname(__FILE__
 
 
 
-//Get the API Key from the server. This is good for 1 hour.
+// First thing, Get the API Key from the server. This is good for 1 hour.
 $getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/' . trim(getenv('apiversion')),
 	array(
 		'email' => trim(getenv('pardotLogin')),
@@ -52,49 +69,69 @@ $APIKey = $getAPIKey['api_key'];
 
 
 
+// Lets get lists of data to look over.
+// We can grab a specific Pardot list (defined with a ENV variable) or recently changed and active prospect records.
+$pardotListID = trim(getenv('pardotListID')); // grab the env if it exists
+if(!empty($pardotListID)) // if we want to inspect a list, lets do so
+{
+
+	$results =  callPardotApi('https://pi.pardot.com/api/listMembership/version/'.trim(getenv('apiversion')).'/do/query?',
+		array(
+			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+			'api_key' => $APIKey, // requested from the server previously
+			'list_id' => trim(getenv('pardotListID')),
+		),
+		'POST'
+	);
+	//print_r($results);
+	loop_the_results($results);
+
+}else{
+
+
+	// Lets look for recent Prospect record changes
+	// This tool assumes it is running every 10 minutes, and that it gets 2 chances to make a correction, so it looks back 21 minutes by default
+	// These values can be changed by setting ENV variables.
+
+	$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
+		array(
+			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+			'api_key' => $APIKey, // requested from the server previously
+			'last_activity_after' => '21 minutes ago',
+			//'last_activity_after' => '1 days ago',
+			'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
+		),
+		'POST'
+	);
+	//print_r($results);
+	loop_the_results($results);
+
+	// Lets look for new Prospect record changes
+	$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
+		array(
+			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+			'api_key' => $APIKey, // requested from the server previously
+			'updated_after' => '21 minutes ago',
+			//'updated_after' => '1 days ago',
+			'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
+		),
+		'POST'
+	);
+	//print_r($results);
+	loop_the_results($results);
+
+}
 
 
 
-// Lets look for recent Prospect record changes
-
-$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
-	array(
-		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
-		'api_key' => $APIKey, // requested from the server previously
-		'last_activity_after' => '21 minutes ago',
-		//'last_activity_after' => '1 days ago',
-		'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
-	),
-	'POST'
-);
-//print_r($results);
-loop_the_results($results);
-
-// Lets look for new Prospect record changes
-$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
-	array(
-		'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
-		'api_key' => $APIKey, // requested from the server previously
-		'updated_after' => '21 minutes ago',
-		//'updated_after' => '1 days ago',
-		'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
-	),
-	'POST'
-);
-//print_r($results);
-loop_the_results($results);
-
-
-
-
-
+// We have some arrays of prospects to inspect. Lets go over them
 function loop_the_results($results)
 {
 	// Lets process the data
 
 	foreach($results['result'] as $key => $value)
 	{
-		
+
 		if($key == 'total_results')
 		{
 			if($value == 0 )
@@ -119,6 +156,30 @@ function loop_the_results($results)
 			{
 				print_r($results);
 			}
+		}elseif($key == 'list_membership')
+		{
+			// We have membership list values, we need to get to the actual prospect record data
+			//print_r($value);
+			foreach ($value AS $prospect)
+			{
+				GLOBAL $APIKey;
+				//print_r($prospect);
+				// Lets look for new Prospect record changes
+				$subresults =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/read?',
+					array(
+						'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+						'api_key' => $APIKey, // requested from the server previously
+						'id' => $prospect['prospect_id'],
+						'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
+					),
+					'POST'
+				);
+				//print_r($subresults);
+
+				search_for_errors($subresults['prospect']);
+			}
+
+
 		}else
 		{
 			print_r($results);
@@ -132,7 +193,7 @@ function loop_the_results($results)
 
 
 
-
+// Here we have an assortment of things to check for. If you want to add additional checks, you would do it here.
 function search_for_errors($prospect)
 {
 	//print_r($prospect);
@@ -182,10 +243,7 @@ function search_for_errors($prospect)
 	//
 	if(!empty($CountryAssumptions) && isset($prospect['state']) && !empty($prospect['state'])  && empty($prospect['country']) && isset($CountryAssumptions[strtolower($prospect['state'])]))
 	{
-		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
-		{
-			echo "Skipping update missing country {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
-		}elseif(trim(getenv('runmode')) == 'demo')
+		if(trim(getenv('runmode')) == 'demo')
 		{
 			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['email']}\n";
 		}else{
@@ -195,6 +253,8 @@ function search_for_errors($prospect)
 	}else{
 		//echo "Skipping Country checking\n";
 	}
+
+	// Add your own checks here if you need
 
 
 
@@ -319,7 +379,7 @@ function callPardotApi($url, $data, $method = 'GET')
 }
 
 
-
+// This re-structures our .csv file bad,good in an array struction of array('bad'->'good',) so we can do quick lookups looking for data to fix.
 function csv_to_array($filename='', $delimiter=',')
 {
 	if(!file_exists($filename) || !is_readable($filename))
