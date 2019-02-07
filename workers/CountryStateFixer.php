@@ -72,19 +72,43 @@ $APIKey = $getAPIKey['api_key'];
 // Lets get lists of data to look over.
 // We can grab a specific Pardot list (defined with a ENV variable) or recently changed and active prospect records.
 $pardotListID = trim(getenv('pardotListID')); // grab the env if it exists
+$recordsToRequest = 200; // We can get up to 200 results at a time from the Pardot API
 if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 {
+	$recordCount = 1; // Start with a value which we will update once we do the first call
+	$accumulatedRecords = array();
+	for($loopcounter = 0; $loopcounter * $recordsToRequest < $recordCount; $loopcounter++)
+	{
+		//echo "{$loopcounter} {$recordCount}\n";
+		$results =  callPardotApi('https://pi.pardot.com/api/listMembership/version/'.trim(getenv('apiversion')).'/do/query?',
+			array(
+				'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
+				'api_key' => $APIKey, // requested from the server previously
+				'list_id' => trim(getenv('pardotListID')),
+				'limit'	  => $recordsToRequest,
+				'offset' => $loopcounter * $recordsToRequest
+			),
+			'POST'
+		);
 
-	$results =  callPardotApi('https://pi.pardot.com/api/listMembership/version/'.trim(getenv('apiversion')).'/do/query?',
-		array(
-			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
-			'api_key' => $APIKey, // requested from the server previously
-			'list_id' => trim(getenv('pardotListID')),
-		),
-		'POST'
-	);
-	//print_r($results);
-	loop_the_results($results);
+
+		//print_r($results);
+		if($results['result']['total_results'] != $recordCount)
+		{
+			$accumulatedRecords = $results;
+			$recordCount = $results['result']['total_results'];
+		}else{
+			foreach($results['result']['list_membership'] AS $listMember)
+			{
+				array_push($accumulatedRecords['result']['list_membership'], $listMember);
+			}
+		}
+		//echo "{$loopcounter} {$recordCount}\n";
+		//print_r($accumulatedRecords);
+		
+	}
+	echo "Inspecting " . sizeof($accumulatedRecords['result']['list_membership']) . " members on the list.\n";;
+	loop_the_results($accumulatedRecords);
 
 }else{
 
@@ -93,32 +117,86 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 	// This tool assumes it is running every 10 minutes, and that it gets 2 chances to make a correction, so it looks back 21 minutes by default
 	// These values can be changed by setting ENV variables.
 
+
+	$recordCount = 1; // Start with a value which we will update once we do the first call
+	$accumulatedRecords = array();
+	for($loopcounter = 0; $loopcounter * $recordsToRequest < $recordCount; $loopcounter++)
+	{
+		//echo "{$loopcounter} {$recordCount}\n";
 	$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
 		array(
 			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 			'api_key' => $APIKey, // requested from the server previously
 			'last_activity_after' => '21 minutes ago',
 			//'last_activity_after' => '1 days ago',
-			'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
+			'fields' => 'email,country,state,crm_owner_fid', // Optional list for speeding up the process by getting just the data we need.
+			'limit'	  => $recordsToRequest,
+			'offset' => $loopcounter * $recordsToRequest
 		),
 		'POST'
 	);
-	//print_r($results);
-	loop_the_results($results);
 
-	// Lets look for new Prospect record changes
-	$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
+
+		//print_r($results);
+		if($results['result']['total_results'] != $recordCount)
+		{
+			$accumulatedRecords = $results;
+			$recordCount = $results['result']['total_results'];
+		}else{
+			foreach($results['result']['prospect'] AS $listMember)
+			{
+				array_push($accumulatedRecords['result']['prospect'], $listMember);
+			}
+		}
+		//echo "{$loopcounter} {$recordCount}\n";
+		//print_r($accumulatedRecords);
+		
+	}
+	echo "Inspecting " . sizeof($accumulatedRecords['result']['prospect']) . " recently active prospects.\n";;
+	loop_the_results($accumulatedRecords);
+
+
+
+	$recordCount = 1; // Start with a value which we will update once we do the first call
+	$accumulatedRecords = array();
+	for($loopcounter = 0; $loopcounter * $recordsToRequest < $recordCount; $loopcounter++)
+	{
+		//echo "{$loopcounter} {$recordCount}\n";
+		$results =  callPardotApi('https://pi.pardot.com/api/prospect/version/'.trim(getenv('apiversion')).'/do/query?',
 		array(
 			'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 			'api_key' => $APIKey, // requested from the server previously
 			'updated_after' => '21 minutes ago',
 			//'updated_after' => '1 days ago',
-			'fields' => 'email,country,state,crm_owner_fid' // Optional list for speeding up the process by getting just the data we need.
+			'fields' => 'email,country,state,crm_owner_fid', // Optional list for speeding up the process by getting just the data we need.
+			'limit'	  => $recordsToRequest,
+			'offset' => $loopcounter * $recordsToRequest
 		),
 		'POST'
 	);
-	//print_r($results);
-	loop_the_results($results);
+
+
+		//print_r($results);
+		if($results['result']['total_results'] != $recordCount)
+		{
+			$accumulatedRecords = $results;
+			$recordCount = $results['result']['total_results'];
+		}else{
+			foreach($results['result']['prospect'] AS $listMember)
+			{
+				array_push($accumulatedRecords['result']['prospect'], $listMember);
+			}
+		}
+		//echo "{$loopcounter} {$recordCount}\n";
+		//print_r($accumulatedRecords);
+		
+	}
+	echo "Inspecting " . sizeof($accumulatedRecords['result']['prospect']) . " recently updated prospects.\n";;
+	loop_the_results($accumulatedRecords);
+
+
+
+
 
 }
 
