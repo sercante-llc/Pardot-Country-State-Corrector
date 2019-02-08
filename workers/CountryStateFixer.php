@@ -70,8 +70,13 @@ $APIKey = $getAPIKey['api_key'];
 
 
 // Lets get lists of data to look over.
-// We can grab a specific Pardot list (defined with a ENV variable) or recently changed and active prospect records.
+// We can grab a specific Pardot list (defined with an ENV variable) or recently changed and active prospect records.
 $pardotListID = trim(getenv('pardotListID')); // grab the env if it exists
+// lets override the list if we pass in a list id variable on the command line
+if( isset($argv[1]) && strtolower($argv[1]) == 'pardotlistid' && !empty($argv[2]))
+{
+	$pardotListID = $argv[2];
+}
 $recordsToRequest = 200; // We can get up to 200 results at a time from the Pardot API
 if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 {
@@ -84,7 +89,7 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 			array(
 				'user_key' => trim(getenv('pardotUserKey')), //available from https://pi.pardot.com/account
 				'api_key' => $APIKey, // requested from the server previously
-				'list_id' => trim(getenv('pardotListID')),
+				'list_id' => $pardotListID,
 				'limit'	  => $recordsToRequest,
 				'offset' => $loopcounter * $recordsToRequest
 			),
@@ -107,7 +112,7 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 		//print_r($accumulatedRecords);
 		
 	}
-	echo "Inspecting " . sizeof($accumulatedRecords['result']['list_membership']) . " members on the list.\n";;
+	echo "Inspecting " . (isset($accumulatedRecords['result']['list_membership']) ? sizeof($accumulatedRecords['result']['list_membership']) : 0 ) . " members on the list {$pardotListID}.\n";;
 	loop_the_results($accumulatedRecords);
 
 }else{
@@ -152,7 +157,7 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 		//print_r($accumulatedRecords);
 		
 	}
-	echo "Inspecting " . sizeof($accumulatedRecords['result']['prospect']) . " recently active prospects.\n";;
+	echo "Inspecting " . (isset($accumulatedRecords['result']['prospect']) ? sizeof($accumulatedRecords['result']['prospect']) : 0 ) . " recently active prospects.\n";;
 	loop_the_results($accumulatedRecords);
 
 
@@ -181,6 +186,15 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 		{
 			$accumulatedRecords = $results;
 			$recordCount = $results['result']['total_results'];
+		}elseif($results['result']['total_results'] == 1){
+			//print_r($results['result']['prospect']);
+			if(isset($accumulatedRecords['result']['prospect']) && is_array($accumulatedRecords['result']['prospect']))
+			{
+				array_push($accumulatedRecords['result']['prospect'],$results['result']['prospect']);
+			}else{
+				$accumulatedRecords['result']['prospect'] = $results['result']['prospect'];			
+			}
+			
 		}else{
 			foreach($results['result']['prospect'] AS $listMember)
 			{
@@ -191,7 +205,7 @@ if(!empty($pardotListID)) // if we want to inspect a list, lets do so
 		//print_r($accumulatedRecords);
 		
 	}
-	echo "Inspecting " . sizeof($accumulatedRecords['result']['prospect']) . " recently updated prospects.\n";;
+	echo "Inspecting " . (isset($accumulatedRecords['result']['prospect']) ? sizeof($accumulatedRecords['result']['prospect']) : 0 ) . " recently updated prospects.\n";;
 	loop_the_results($accumulatedRecords);
 
 
@@ -274,6 +288,7 @@ function loop_the_results($results)
 // Here we have an assortment of things to check for. If you want to add additional checks, you would do it here.
 function search_for_errors($prospect)
 {
+	
 	//print_r($prospect);
 	global $StateCorrections, $CountryCorrections, $CountryAssumptions, $APIKey; // Lets pull in some data sets
 
@@ -285,10 +300,10 @@ function search_for_errors($prospect)
 	{
 		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcestatecorrections')) != 'true') // This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skipping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['id']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
-			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['email']}\n";
+			echo "Need to update state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['id']}\n";
 		}else{
 			echo "Updating state {$prospect['state']} to {$StateCorrections[strtolower($prospect['state'])]} for {$prospect['id']}\n";
 			$corrections['state'] = $StateCorrections[strtolower($prospect['state'])];
@@ -303,10 +318,10 @@ function search_for_errors($prospect)
 	{
 		if(!empty($prospect['crm_owner_fid']) && trim(getenv('forcecountrycorrections')) != 'true')// This is in the CRM and thus probably not persistant if written OR we overwrite this because of field sync settings
 		{
-			echo "Skipping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']} as this record is in CRM already\n";
+			echo "Skipping update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']} as this record is in CRM already\n";
 		}elseif(trim(getenv('runmode')) == 'demo')
 		{
-			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['email']}\n";
+			echo "Need to update country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']}\n";
 		}else{
 			echo "Updating country {$prospect['country']} to {$CountryCorrections[strtolower($prospect['country'])]} for {$prospect['id']}\n";			
 			$corrections['country'] = $CountryCorrections[strtolower($prospect['country'])];	
@@ -323,7 +338,7 @@ function search_for_errors($prospect)
 	{
 		if(trim(getenv('runmode')) == 'demo')
 		{
-			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['email']}\n";
+			echo "Need to add country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['id']}\n";
 		}else{
 			echo "Updating country for {$prospect['state']} to {$CountryAssumptions[strtolower($prospect['state'])]} for {$prospect['id']}\n";			
 			$corrections['country'] = $CountryAssumptions[strtolower($prospect['state'])];	
@@ -384,7 +399,7 @@ function search_for_errors($prospect)
  * @return string the --raw-XML-- associative array response from the Pardot API
  * @throws Exception if we were unable to contact the Pardot API or something went wrong
  */
-function callPardotApi($url, $data, $method = 'GET')
+function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
 {
 	// build out the full url, with the query string attached.
 	$queryString = http_build_query($data, null, '&');
@@ -415,6 +430,16 @@ function callPardotApi($url, $data, $method = 'GET')
 	} elseif (strcasecmp($method, 'GET') !== 0) {
 		// perhaps a DELETE?
 		curl_setopt($curl_handle, CURLOPT_CUSTOMREQUEST, strtoupper($method));
+		/*
+		// Try to use the headers for non-post methods
+		curl_setopt($curl_handle, CURLOPT_HTTPHEADER, array(
+			"Pardot api_key: {$data['api_key']}",
+			"Pardot user_key: {$data['user_key']}",
+		));
+		// This doesn't actually do anything here, it's much too late. 
+		unset($data['api_key']);
+		unset($data['user_key']);
+		 */
 	}
 
 	$pardotApiResponse = curl_exec($curl_handle);
@@ -448,9 +473,34 @@ function callPardotApi($url, $data, $method = 'GET')
 
 	if(isset($pardotApiResponseData['@attributes']['stat']) && $pardotApiResponseData['@attributes']['stat'] == 'fail')
 	{
-		echo $url . "\n\n" . $pardotApiResponse;
-		print_r($pardotApiResponseData);
-		exit();
+		// Lets look for an API Key Time out.
+		if($pardotApiResponseData['err'] == "Invalid API key or user key" && $recursed == FALSE) // make sure we don't dive into a recursion loop
+		{
+			echo "Attempting to refresh APIKey\n";
+			global $APIKey; // Bring this in scope so we can update it from here
+			// Try to login again
+
+			$getAPIKey =  callPardotApi('https://pi.pardot.com/api/login/version/' . trim(getenv('apiversion')),
+				array(
+					'email' => trim(getenv('pardotLogin')),
+					'password' => trim(getenv('pardotPassword')),
+					'user_key' => trim(getenv('pardotUserKey')) //available from https://pi.pardot.com/account
+				),
+				'POST'
+			);
+			//print_r($getAPIKey);
+			$APIKey = $getAPIKey['api_key'];
+
+			// Try to make the call a 2nd time now that we ought to have a good API key
+			$data['api_key'] = $APIKey; // We need to give the new API Key
+			callPardotApi($url, $data, $method, TRUE);
+
+		}else{
+
+			echo $url . "\n\n" . $pardotApiResponse;
+			print_r($pardotApiResponseData);
+			exit();
+		}
 	}
 
 	return $pardotApiResponseData;
