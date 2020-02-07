@@ -396,11 +396,14 @@ function search_for_errors($prospect)
  * @param string $url the full Pardot API URL to call, e.g. "https://pi.pardot.com/api/prospect/version/3/do/query"
  * @param array $data the data to send to the API - make sure to include your api_key and user_key for authentication
  * @param string $method the HTTP method, one of "GET", "POST", "DELETE"
+ * @param string $body A body in JSON format to pass along for ASYNC posts
+ * @param bool $recursed flag to tell if we are recursing on this function so we don't create a recursion loop. 
  * @return string the --raw-XML-- associative array response from the Pardot API
  * @throws Exception if we were unable to contact the Pardot API or something went wrong
  */
-function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
-{
+function callPardotApi($url, $data, $method = 'GET', $body = NULL, $recursed = FALSE)
+{	
+
 	// build out the full url, with the query string attached.
 	$queryString = http_build_query($data, null, '&');
 	if (strpos($url, '?') !== false) {
@@ -408,8 +411,32 @@ function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
 	} else {
 		$url = $url . '?' . $queryString;
 	}
-	//echo $url . "\n\n";
+	echo $url . "\n\n";
 	$curl_handle = curl_init($url);
+
+
+	//Lets set some headers if needed
+	$headers = array();
+	// If we have an api key, lets use it
+	if(isset($data['api_key']) && !empty($data['api_key']))
+	{
+		$headers[] = "Authorization: Pardot api_key={$data['api_key']}, user_key={$data['user_key']}";
+		// These are still on the URL string, which probably negates the intent of having them in the header
+	}
+	// If we have a body, lets set that up
+	if(isset( $body) && !empty( $body))
+	{
+		$headers[] = 'Content-Type: application/json';                                                                               
+		$headers[] = 'Content-Length: ' . strlen($body);
+		curl_setopt($curl_handle, CURLOPT_POSTFIELDS, $body);                                                                  
+		
+	}
+	// Let's use these headers if we have any
+	if(!empty($headers))
+	{
+		curl_setopt($curl_handle, CURLOPT_HTTPHEADER, $headers);
+	}
+
 
 	// wait 5 seconds to connect to the Pardot API, and 30
 	// total seconds for everything to complete
@@ -430,16 +457,6 @@ function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
 	} elseif (strcasecmp($method, 'GET') !== 0) {
 		// perhaps a DELETE?
 		curl_setopt($curl_handle, CURLOPT_CUSTOMREQUEST, strtoupper($method));
-		/*
-		// Try to use the headers for non-post methods
-		curl_setopt($curl_handle, CURLOPT_HTTPHEADER, array(
-			"Pardot api_key: {$data['api_key']}",
-			"Pardot user_key: {$data['user_key']}",
-		));
-		// This doesn't actually do anything here, it's much too late. 
-		unset($data['api_key']);
-		unset($data['user_key']);
-		 */
 	}
 
 	$pardotApiResponse = curl_exec($curl_handle);
@@ -476,7 +493,7 @@ function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
 		// Lets look for an API Key Time out.
 		if($pardotApiResponseData['err'] == "Invalid API key or user key" && $recursed == FALSE) // make sure we don't dive into a recursion loop
 		{
-			echo "Attempting to refresh APIKey\n";
+			echo "\n\tAttempting to refresh APIKey\n";
 			global $APIKey; // Bring this in scope so we can update it from here
 			// Try to login again
 
@@ -493,14 +510,26 @@ function callPardotApi($url, $data, $method = 'GET', $recursed = FALSE)
 
 			// Try to make the call a 2nd time now that we ought to have a good API key
 			$data['api_key'] = $APIKey; // We need to give the new API Key
-			callPardotApi($url, $data, $method, TRUE);
+			return callPardotApi($url, $data, $method, $body, TRUE);
 
 		}else{
 
-			echo $url . "\n\n" . $pardotApiResponse;
+			echo "Something strange happened with " . $url . "\n\n" . $pardotApiResponse;
 			print_r($pardotApiResponseData);
-			exit();
+			//exit();
 		}
+	}elseif(empty($xml))
+	{
+		echo "Possible issue with API?\n{$url}\n";
+		print_r($pardotApiResponseData);		
+	}elseif($recursed == TRUE)
+	{
+		// Everything is likely ok.
+		echo "We recursed. Expired API Key. Did we get good data back this time?\n{$url}\n";
+		//print_r($pardotApiResponseData);			
+	}else
+	{
+		// Everything is likely ok.		
 	}
 
 	return $pardotApiResponseData;
