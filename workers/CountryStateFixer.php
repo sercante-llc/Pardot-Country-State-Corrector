@@ -405,13 +405,15 @@ function callPardotApi($url, $data, $method = 'GET', $body = NULL, $recursed = F
 {	
 
 	// build out the full url, with the query string attached.
-	$queryString = http_build_query($data, null, '&');
-	if (strpos($url, '?') !== false) {
-		$url = $url . '&' . $queryString;
-	} else {
-		$url = $url . '?' . $queryString;
+	if (strcasecmp($method, 'POST') !== 0) { // Not for POSTS, we will do that further down	
+		$queryString = http_build_query($data, null, '&');
+		if (strpos($url, '?') !== false) {
+			$url = $url . '&' . $queryString;
+		} else {
+			$url = $url . '?' . $queryString;
+		}
+		echo $url . "\n\n";
 	}
-	echo $url . "\n\n";
 	$curl_handle = curl_init($url);
 
 
@@ -453,7 +455,8 @@ function callPardotApi($url, $data, $method = 'GET', $body = NULL, $recursed = F
 	curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
 
 	if (strcasecmp($method, 'POST') === 0) {
-		curl_setopt($curl_handle, CURLOPT_POST, true);
+		curl_setopt($curl_handle, CURLOPT_POST, count($data));
+		curl_setopt($curl_handle, CURLOPT_POSTFIELDS, $data);                                                                  		
 	} elseif (strcasecmp($method, 'GET') !== 0) {
 		// perhaps a DELETE?
 		curl_setopt($curl_handle, CURLOPT_CUSTOMREQUEST, strtoupper($method));
